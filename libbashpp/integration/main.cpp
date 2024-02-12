@@ -127,6 +127,13 @@ void test_pipe_three_processes(Context &context) {
                  Command{"script.py", {"--filter", "Erroneous"}});
 }
 
+void test_complex_1(Context &context) {
+    auto data = svToByteSpan("This is\nA complica1ed\nA test\nT3st\nWhere\nNumbers are removed!\n");
+    test(context, Command{"script.py", {"--read", "0"}, {{in, InputVariableRedirection{{data.begin(), data.end()}}}, {err, FDRedirection{1}}}} |
+                          Command{"script.py", {"--filter", "1"}} |
+                          Command{"script.py", {"--filter", "3"}, {{out, OutputVariableRedirection{}}}});
+}
+
 int main(int argc, const char *argv[]) {
     std::map<std::string_view, void (*)(Context &)> tests{
             {"test_simple_echo", test_simple_echo},
@@ -144,6 +151,7 @@ int main(int argc, const char *argv[]) {
             {"test_redirect_stdout_to_variable", test_redirect_stdout_to_variable},
             {"test_pipe_two_processes", test_pipe_two_processes},
             {"test_pipe_three_processes", test_pipe_three_processes},
+            {"test_complex_1", test_complex_1},
     };
 
     if (argc != 2) {

@@ -122,3 +122,7 @@ def test_pipe_two_processes():
 
 def test_pipe_three_processes():
     run_test('test_pipe_two_processes', stdout='First line\nSecond line\n')
+
+
+def test_complex_1():
+    run_test('test_complex_1', variables={'1': 'This is\nA test\nWhere\nNumbers are removed!\n'})
