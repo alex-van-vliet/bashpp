@@ -17,7 +17,7 @@ namespace bashpp {
         }
 
         void visit(const Command &command) override {
-            os_ << std::format("{:?}", command.command());
+            os_ << std::format("{:?}", command.program());
             for (const auto &argument: command.arguments()) {
                 os_ << std::format(" {:?}", argument);
             }

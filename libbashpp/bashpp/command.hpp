@@ -5,15 +5,15 @@
 
 namespace bashpp {
     class Command : public details::NodeImpl<Command> {
-        std::string command_;
+        std::string program_;
         std::vector<std::string> arguments_;
 
     public:
-        Command(std::string command, std::vector<std::string> arguments)
-            : command_{std::move(command)}, arguments_{std::move(arguments)} {}
+        Command(std::string program, std::vector<std::string> arguments)
+            : program_{std::move(program)}, arguments_{std::move(arguments)} {}
 
-        const std::string &command() const {
-            return command_;
+        const std::string &program() const {
+            return program_;
         }
 
         const std::vector<std::string> &arguments() const {

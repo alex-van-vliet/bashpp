@@ -2,9 +2,9 @@
 #include <bashpp/visitor.hpp>
 #include <gtest/gtest.h>
 
-TEST(LibbashppCommand, TheCommandCanBeQueried) {
+TEST(LibbashppCommand, TheProgramCanBeQueried) {
     bashpp::Command command{"echo", {"hello", "world"}};
-    EXPECT_STREQ(command.command().c_str(), "echo");
+    EXPECT_STREQ(command.program().c_str(), "echo");
 }
 
 TEST(LibbashppCommand, TheArgumentsCanBeQueried) {
