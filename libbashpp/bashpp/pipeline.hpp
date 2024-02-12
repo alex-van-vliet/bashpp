@@ -1,10 +1,11 @@
 #pragma once
 
 #include <bashpp/command.hpp>
+#include <bashpp/node.hpp>
 #include <vector>
 
 namespace bashpp {
-    class Pipeline {
+    class Pipeline : public details::NodeImpl<Pipeline> {
         std::vector<Command> commands_;
 
     public:
@@ -12,7 +13,7 @@ namespace bashpp {
             commands_.emplace_back(std::move(last));
         }
 
-        const std::vector<Command>& commands() const {
+        const std::vector<Command> &commands() const {
             return commands_;
         }
     };

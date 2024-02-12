@@ -1,9 +1,10 @@
 #pragma once
 
+#include <bashpp/node.hpp>
 #include <vector>
 
 namespace bashpp {
-    class Command {
+    class Command : public details::NodeImpl<Command> {
         std::string command_;
         std::vector<std::string> arguments_;
 
