@@ -65,9 +65,9 @@ class Read(typing.NamedTuple):
     @classmethod
     def build(cls, number: str):
         return cls({
-                       '0': sys.stdin,
-                       '1': os.fdopen(os.dup(1), 'w+'),
-                   }[number])
+                       '0': lambda: sys.stdin,
+                       '1': lambda: os.fdopen(os.dup(1), 'w+'),
+                   }[number]())
 
     def execute(self):
         print(self.stream.read(), end='', file=sys.stderr)
