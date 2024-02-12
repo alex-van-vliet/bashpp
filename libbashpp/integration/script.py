@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import sys
 import argparse
 import typing
@@ -59,6 +59,20 @@ class TestStdout(typing.NamedTuple):
             print('Stdout is open', file=sys.stderr)
 
 
+class Read(typing.NamedTuple):
+    stream: typing.IO
+
+    @classmethod
+    def build(cls, number: str):
+        return cls({
+                       '0': sys.stdin,
+                       '1': os.fdopen(os.dup(1), 'w+'),
+                   }[number])
+
+    def execute(self):
+        print(self.stream.read(), end='', file=sys.stderr)
+
+
 def main(prog, *args):
     parser = argparse.ArgumentParser(prog=prog, description='Script to run various scenarios')
     parser.add_argument('--print', dest='instructions', action='append', type=Print.build,
@@ -71,6 +85,8 @@ def main(prog, *args):
                         help='Sends the signal with the given number to itself')
     parser.add_argument('--test-stdout', dest='instructions', action='append_const', const=TestStdout(),
                         help='Prints whether stdout is open/closed to stderr')
+    parser.add_argument('--read', dest='instructions', action='append', type=Read.build,
+                        help='Read from stdin or stdout and prints it on stderr')
 
     args = parser.parse_args(args)
 

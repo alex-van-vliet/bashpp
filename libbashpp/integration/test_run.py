@@ -1,24 +1,34 @@
 import os
 import subprocess
+import tempfile
 
 
-def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = '', exit=0):
-    process = subprocess.Popen([os.getenv('BASHPP_INTEGRATION_EXE'), test_name],
-                               executable=os.getenv('BASHPP_INTEGRATION_EXE'), stdin=subprocess.PIPE,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-    out, err = process.communicate(stdin.encode())
-    assert process.returncode == 0
-    program_stderr = err.decode().removeprefix('========== STDERR START ==========\n').removesuffix(
-        '========== STDERR STOP ==========\n')
-    assert program_stderr == stderr
-    program_stdout, captured = out.decode().split('========== CAPTURED ==========\n')
-    program_stdout = program_stdout.removeprefix('========== STDOUT START ==========\n').removesuffix(
-        '========== STDOUT STOP ==========\n')
-    assert program_stdout == stdout
+def no_action():
+    pass
 
-    captured_exit = int(captured.removeprefix('EXIT CODE: ').removesuffix('\n'))
-    assert captured_exit == exit
+
+def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = '', exit=0, setup=no_action,
+             teardown=no_action):
+    with tempfile.TemporaryDirectory() as test_dir:
+        os.chdir(test_dir)
+        setup()
+        process = subprocess.Popen([os.getenv('BASHPP_INTEGRATION_EXE'), test_name],
+                                   executable=os.getenv('BASHPP_INTEGRATION_EXE'), stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+        out, err = process.communicate(stdin.encode())
+        assert process.returncode == 0
+        program_stderr = err.decode().removeprefix('========== STDERR START ==========\n').removesuffix(
+            '========== STDERR STOP ==========\n')
+        assert program_stderr == stderr
+        program_stdout, captured = out.decode().split('========== CAPTURED ==========\n')
+        program_stdout = program_stdout.removeprefix('========== STDOUT START ==========\n').removesuffix(
+            '========== STDOUT STOP ==========\n')
+        assert program_stdout == stdout
+
+        captured_exit = int(captured.removeprefix('EXIT CODE: ').removesuffix('\n'))
+        assert captured_exit == exit
+        teardown()
 
 
 def test_simple_echo():
@@ -47,3 +57,47 @@ def test_redirect_err_to_out():
 
 def test_close_stdout():
     run_test('test_close_stdout', stderr='Stdout is closed\n')
+
+
+def test_redirect_stdin_from_file():
+    def setup():
+        with open('./file.txt', 'w') as f:
+            print('Hello from file', file=f)
+
+    run_test('test_redirect_stdin_from_file', setup=setup, stderr='Hello from file\n')
+
+
+def test_redirect_stdout_to_file():
+    def setup():
+        with open('./file.txt', 'w') as f:
+            print('Original file', file=f)
+
+    def teardown():
+        with open('./file.txt', 'r') as f:
+            assert f.read() == 'Printed from test\n'
+
+    run_test('test_redirect_stdout_to_file', setup=setup, teardown=teardown)
+
+
+def test_redirect_stdout_to_file_and_append():
+    def setup():
+        with open('./file.txt', 'w') as f:
+            print('Original file', file=f)
+
+    def teardown():
+        with open('./file.txt', 'r') as f:
+            assert f.read() == 'Original file\nPrinted from test\n'
+
+    run_test('test_redirect_stdout_to_file_and_append', setup=setup, teardown=teardown)
+
+
+def test_redirect_stdout_to_read_write():
+    def setup():
+        with open('./file.txt', 'w') as f:
+            print('Original file', file=f)
+
+    def teardown():
+        with open('./file.txt', 'r') as f:
+            assert f.read() == 'Original file\nPrinted from test\n'
+
+    run_test('test_redirect_stdout_to_read_write', setup=setup, teardown=teardown, stderr='Original file\n')

@@ -49,6 +49,22 @@ void test_close_stdout(Context &context) {
     test(context, Command{"script.py", {"--test-stdout"}, {{out, CloseFDRedirection{}}}});
 }
 
+void test_redirect_stdin_from_file(Context &context) {
+    test(context, Command{"script.py", {"--read", "0"}, {{in, InputPathRedirection{"./file.txt"}}}});
+}
+
+void test_redirect_stdout_to_file(Context &context) {
+    test(context, Command{"script.py", {"--print", "Printed from test\n"}, {{out, OutputPathRedirection{"./file.txt"}}}});
+}
+
+void test_redirect_stdout_to_file_and_append(Context &context) {
+    test(context, Command{"script.py", {"--print", "Printed from test\n"}, {{out, OutputPathAppendRedirection{"./file.txt"}}}});
+}
+
+void test_redirect_stdout_to_read_write(Context &context) {
+    test(context, Command{"script.py", {"--read", "1", "--print", "Printed from test\n"}, {{out, InputOutputPathRedirection{"./file.txt"}}}});
+}
+
 int main(int argc, const char *argv[]) {
     std::map<std::string_view, void (*)(Context &)> tests{
             {"test_simple_echo", test_simple_echo},
@@ -58,6 +74,10 @@ int main(int argc, const char *argv[]) {
             {"test_redirect_out_to_err", test_redirect_out_to_err},
             {"test_redirect_err_to_out", test_redirect_err_to_out},
             {"test_close_stdout", test_close_stdout},
+            {"test_redirect_stdin_from_file", test_redirect_stdin_from_file},
+            {"test_redirect_stdout_to_file", test_redirect_stdout_to_file},
+            {"test_redirect_stdout_to_file_and_append", test_redirect_stdout_to_file_and_append},
+            {"test_redirect_stdout_to_read_write", test_redirect_stdout_to_read_write},
     };
 
     if (argc != 2) {

@@ -15,10 +15,25 @@ namespace bashpp {
         int fd;
     };
     struct CloseFDRedirection {};
+    struct InputPathRedirection {
+        std::string path;
+    };
+    struct OutputPathRedirection {
+        std::string path;
+    };
+    struct OutputPathAppendRedirection {
+        std::string path;
+    };
+    struct InputOutputPathRedirection {
+        std::string path;
+    };
 
     struct Redirection {
         int fd;
-        std::variant<FDRedirection, CloseFDRedirection> redirection;
+        std::variant<FDRedirection, CloseFDRedirection,
+                     InputPathRedirection, OutputPathRedirection, OutputPathAppendRedirection,
+                     InputOutputPathRedirection>
+                redirection;
     };
 
     class Command : public details::NodeImpl<Command> {

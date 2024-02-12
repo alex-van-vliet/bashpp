@@ -21,6 +21,22 @@ namespace {
         void operator()(const CloseFDRedirection &) const {
             wrappers::close(fd_);
         }
+
+        void operator()(const InputPathRedirection &r) const {
+            (*this)(FDRedirection{wrappers::open(r.path.c_str(), O_RDONLY | O_CLOEXEC, 0)});
+        }
+        void operator()(const OutputPathRedirection &r) const {
+            (*this)(FDRedirection{wrappers::open(r.path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
+                                                 S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)});
+        }
+        void operator()(const OutputPathAppendRedirection &r) const {
+            (*this)(FDRedirection{wrappers::open(r.path.c_str(), O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC,
+                                                 S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)});
+        }
+        void operator()(const InputOutputPathRedirection &r) const {
+            (*this)(FDRedirection{wrappers::open(r.path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC,
+                                                 S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)});
+        }
     };
 }// namespace
 
