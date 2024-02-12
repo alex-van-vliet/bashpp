@@ -15,7 +15,6 @@ target_compile_options(libbashpp PRIVATE -Wall -Wextra -pedantic $<$<CONFIG:Debu
 target_link_libraries(libbashpp PRIVATE $<$<CONFIG:Debug>:-fsanitize=address>)
 target_include_directories(libbashpp PRIVATE ./bashpp)
 target_include_directories(libbashpp PUBLIC .)
-target_compile_definitions(libbashpp PRIVATE $<$<CONFIG:Debug>:DEBUG=1>)
 
 add_executable(libbashpp_tests
     tests/command.cpp
@@ -36,7 +35,8 @@ gtest_discover_tests(libbashpp_tests)
 
 add_executable(libbashpp_integration integration/main.cpp)
 target_compile_options(libbashpp_integration PRIVATE -Wall -Wextra -pedantic $<$<CONFIG:Debug>:-Werror -fsanitize=address> $<$<CONFIG:Release>:-O3>)
-target_link_libraries(libbashpp_integration PRIVATE libbashpp $<$<CONFIG:Debug>:-fsanitize=address>)
+target_link_libraries(libbashpp_integration PRIVATE libbashpp nlohmann_json::nlohmann_json $<$<CONFIG:Debug>:-fsanitize=address>)
+target_compile_definitions(libbashpp_integration PRIVATE $<$<CONFIG:Debug>:DEBUG=1>)
 
 pytest_discover_tests(libbashpp_integration_tests
     TRIM_FROM_NAME "^test_"

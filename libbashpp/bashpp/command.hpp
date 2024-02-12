@@ -3,6 +3,8 @@
 #include <bashpp/node.hpp>
 #include <bashpp/process.hpp>
 #include <optional>
+#include <span>
+#include <string_view>
 #include <variant>
 #include <vector>
 

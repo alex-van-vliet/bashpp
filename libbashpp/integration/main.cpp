@@ -1,45 +1,53 @@
 #include <bashpp/command.hpp>
 #include <bashpp/context.hpp>
+#include <bashpp/helpers.hpp>
 #include <bashpp/pipeline.hpp>
 #include <filesystem>
 #include <format>
 #include <iostream>
 #include <map>
+#include <nlohmann/json.hpp>
 #include <span>
 #include <string_view>
 
 using namespace bashpp;
+using namespace nlohmann;
 
 void test(Context &context, Node &&node) {
-    std::cout << "========== STDOUT START ==========" << std::endl;
-    std::cerr << "========== STDERR START ==========" << std::endl;
     node.start(context);
     node.wait();
-    std::cout << "========== STDOUT STOP ==========" << std::endl;
-    std::cerr << "========== STDERR STOP ==========" << std::endl;
-
     std::cout << "========== CAPTURED ==========" << std::endl;
-    std::cout << "EXIT CODE: " << +node.exit() << std::endl;
+
+    json result;
+    result["exit_code"] = +node.exit();
+    result["processes"] = json::array();
+    result["redirections"] = json::object();
     if (auto command = dynamic_cast<Command *>(&node)) {
+        result["processes"].push_back(json::object());
+        result["processes"].back()["exit_code"] = +command->process()->exit();
+        result["processes"].back()["redirections"] = json::object();
         auto &process = command->process();
         for (const auto &redirection: process->redirections()) {
-            std::cout << "---------- " << redirection.first << " START ----------" << std::endl;
-            std::cout << std::string_view(reinterpret_cast<const char *>(redirection.second.second.data()),
-                                          redirection.second.second.size());
-            std::cout << "---------- " << redirection.first << " STOP ----------" << std::endl;
+            result["processes"].back()["redirections"][std::to_string(redirection.first)] = byteSpanToSv(redirection.second.second);
+            result["redirections"][std::to_string(redirection.first)] = byteSpanToSv(command->redirection(redirection.first));
         }
     } else if (auto pipeline = dynamic_cast<Pipeline *>(&node)) {
-        auto &process = pipeline->commands().back().process();
-        for (const auto &redirection: process->redirections()) {
-            std::cout << "---------- " << redirection.first << " START ----------" << std::endl;
-            std::cout << std::string_view(reinterpret_cast<const char *>(redirection.second.second.data()),
-                                          redirection.second.second.size());
-            std::cout << "---------- " << redirection.first << " STOP ----------" << std::endl;
+        for (auto &command: pipeline->commands()) {
+            result["processes"].push_back(json::object());
+            result["processes"].back()["exit_code"] = +command.process()->exit();
+            result["processes"].back()["redirections"] = json::object();
+            auto &process = command.process();
+            for (const auto &redirection: process->redirections()) {
+                result["processes"].back()["redirections"][std::to_string(redirection.first)] = byteSpanToSv(redirection.second.second);
+            }
+        }
+        for (const auto &redirection: pipeline->commands().back().process()->redirections()) {
+            result["redirections"][std::to_string(redirection.first)] = byteSpanToSv(pipeline->redirection(redirection.first));
         }
     } else {
         throw std::logic_error{"Invalid node"};
     }
-    std::cout << "========== FD LEAKS ==========" << std::endl;
+    result["fd_leaks"] = json::array();
 #ifdef DEBUG
     int startFd = 4;
 #else
@@ -47,9 +55,10 @@ void test(Context &context, Node &&node) {
 #endif
     for (int i = startFd; i < FD_SETSIZE; ++i) {
         if (wrappers::fcntlGetFL(wrappers::Allow{{EBADF}}, i) != -1) {
-            std::cout << i << std::endl;
+            result["fd_leaks"].push_back(i);
         }
     }
+    std::cout << result.dump(4) << std::endl;
 }
 
 void test_simple_echo(Context &context) {
@@ -97,9 +106,8 @@ void test_redirect_stdout_to_read_write(Context &context) {
 }
 
 void test_redirect_stdin_from_variable(Context &context) {
-    const char *data = "Printed from test\n";
-    std::span<const std::byte> span{reinterpret_cast<const std::byte *>(data), strlen(data)};
-    test(context, Command{"script.py", {"--read", "0"}, {{in, InputVariableRedirection{{span.begin(), span.end()}}}}});
+    auto data = svToByteSpan("Printed from test\n");
+    test(context, Command{"script.py", {"--read", "0"}, {{in, InputVariableRedirection{{data.begin(), data.end()}}}}});
 }
 
 void test_redirect_stdout_to_variable(Context &context) {

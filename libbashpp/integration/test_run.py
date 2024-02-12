@@ -1,6 +1,7 @@
 import os
 import subprocess
 import tempfile
+import json
 
 
 def no_action():
@@ -18,31 +19,21 @@ def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = ''
                                    stderr=subprocess.PIPE)
         out, err = process.communicate(stdin.encode())
         assert process.returncode == 0
-        program_stderr = err.decode().removeprefix('========== STDERR START ==========\n').removesuffix(
-            '========== STDERR STOP ==========\n')
-        assert program_stderr == stderr
-        program_stdout, captured = out.decode().split('========== CAPTURED ==========\n')
-        captured, fd_leaks = captured.split('========== FD LEAKS ==========\n')
-        program_stdout = program_stdout.removeprefix('========== STDOUT START ==========\n').removesuffix(
-            '========== STDOUT STOP ==========\n')
-        assert program_stdout == stdout
 
-        captured_exit, *captured = captured.split('\n')
-        captured = '\n'.join(captured)
-        captured_exit = int(captured_exit.removeprefix('EXIT CODE: '))
-        assert captured_exit == exit
+        out = out.decode()
+        err = err.decode()
+
+        out, captured = out.split('========== CAPTURED ==========\n')
+        captured = json.loads(captured)
+
+        assert err == stderr
+        assert out == stdout
+
+        assert captured['exit_code'] == exit
+        assert captured['redirections'] == (variables or {})
         teardown()
 
-        captured_fds = {}
-        while captured:
-            fd = int(captured[len('---------- '):captured.find(' START')])
-            end = captured.find(f'---------- {fd} STOP ----------\n')
-            captured_fds[fd] = captured[len(f'---------- {fd} START ----------\n'):end]
-            captured = captured[end+len(f'---------- {fd} STOP ----------\n'):]
-
-        assert captured_fds == (variables or {})
-
-        assert fd_leaks == ''
+        assert captured['fd_leaks'] == []
 
 
 def test_simple_echo():
@@ -122,7 +113,7 @@ def test_redirect_stdin_from_variable():
 
 
 def test_redirect_stdout_to_variable():
-    run_test('test_redirect_stdout_to_variable', variables={1: 'Printed from test\n'})
+    run_test('test_redirect_stdout_to_variable', variables={'1': 'Printed from test\n'})
 
 
 def test_pipe_two_processes():
