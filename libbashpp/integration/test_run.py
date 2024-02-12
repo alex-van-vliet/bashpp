@@ -22,6 +22,7 @@ def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = ''
             '========== STDERR STOP ==========\n')
         assert program_stderr == stderr
         program_stdout, captured = out.decode().split('========== CAPTURED ==========\n')
+        captured, fd_leaks = captured.split('========== FD LEAKS ==========\n')
         program_stdout = program_stdout.removeprefix('========== STDOUT START ==========\n').removesuffix(
             '========== STDOUT STOP ==========\n')
         assert program_stdout == stdout
@@ -40,6 +41,8 @@ def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = ''
             captured = captured[end+len(f'---------- {fd} STOP ----------\n'):]
 
         assert captured_fds == (variables or {})
+
+        assert fd_leaks == ''
 
 
 def test_simple_echo():

@@ -26,6 +26,13 @@ void test(Context &context, Node &&command) {
                                       redirection.second.second.size());
         std::cout << "---------- " << redirection.first << " STOP ----------" << std::endl;
     }
+
+    std::cout << "========== FD LEAKS ==========" << std::endl;
+    for (int i = 3; i < FD_SETSIZE; ++i) {
+        if (wrappers::fcntlGetFL(wrappers::Allow{{EBADF}}, i) != -1) {
+            std::cout << i << std::endl;
+        }
+    }
 }
 
 void test_simple_echo(Context &context) {
