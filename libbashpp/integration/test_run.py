@@ -8,7 +8,7 @@ def no_action():
 
 
 def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = '', exit=0, setup=no_action,
-             teardown=no_action):
+             teardown=no_action, variables=None):
     with tempfile.TemporaryDirectory() as test_dir:
         os.chdir(test_dir)
         setup()
@@ -26,9 +26,20 @@ def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = ''
             '========== STDOUT STOP ==========\n')
         assert program_stdout == stdout
 
-        captured_exit = int(captured.removeprefix('EXIT CODE: ').removesuffix('\n'))
+        captured_exit, *captured = captured.split('\n')
+        captured = '\n'.join(captured)
+        captured_exit = int(captured_exit.removeprefix('EXIT CODE: '))
         assert captured_exit == exit
         teardown()
+
+        captured_fds = {}
+        while captured:
+            fd = int(captured[len('---------- '):captured.find(' START')])
+            end = captured.find(f'---------- {fd} STOP ----------\n')
+            captured_fds[fd] = captured[len(f'---------- {fd} START ----------\n'):end]
+            captured = captured[end+len(f'---------- {fd} STOP ----------\n'):]
+
+        assert captured_fds == (variables or {})
 
 
 def test_simple_echo():
@@ -101,3 +112,11 @@ def test_redirect_stdout_to_read_write():
             assert f.read() == 'Original file\nPrinted from test\n'
 
     run_test('test_redirect_stdout_to_read_write', setup=setup, teardown=teardown, stderr='Original file\n')
+
+
+def test_redirect_stdin_from_variable():
+    run_test('test_redirect_stdin_from_variable', stderr='Printed from test\n')
+
+
+def test_redirect_stdout_to_variable():
+    run_test('test_redirect_stdout_to_variable', variables={1: 'Printed from test\n'})

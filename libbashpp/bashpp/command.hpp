@@ -27,12 +27,17 @@ namespace bashpp {
     struct InputOutputPathRedirection {
         std::string path;
     };
+    struct InputVariableRedirection {
+        std::vector<std::byte> bytes;
+    };
+    struct OutputVariableRedirection {};
 
     struct Redirection {
         int fd;
         std::variant<FDRedirection, CloseFDRedirection,
                      InputPathRedirection, OutputPathRedirection, OutputPathAppendRedirection,
-                     InputOutputPathRedirection>
+                     InputOutputPathRedirection,
+                     InputVariableRedirection, OutputVariableRedirection>
                 redirection;
     };
 
@@ -46,6 +51,12 @@ namespace bashpp {
         Command(std::string program, std::vector<std::string> arguments, std::vector<Redirection> redirections = {})
             : program_{std::move(program)}, arguments_{std::move(arguments)}, redirections_{std::move(redirections)},
               process_{std::nullopt} {}
+
+        Command(const Command&) = delete;
+        Command& operator=(const Command&) = delete;
+
+        Command(Command&&) = default;
+        Command& operator=(Command&&) = default;
 
         const std::string &program() const {
             return program_;
@@ -67,8 +78,8 @@ namespace bashpp {
             return process_;
         }
 
-        void process(pid_t pid) {
-            process_ = Process{pid};
+        void setupProcess() {
+            process_.emplace();
         }
     };
 }// namespace bashpp

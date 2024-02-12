@@ -29,7 +29,7 @@ TEST(LibbashppWaitVisitor, ACommandCannotBeStartedTwice) {
     bashpp::StartVisitor visitor{context};
     bashpp::Command command{"echo", {"hello", "world"}};
 
-    command.process(1);
+    command.setupProcess();
 
     try {
         visitor.visit(command);

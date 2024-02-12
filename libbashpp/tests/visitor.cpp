@@ -39,7 +39,9 @@ TEST(LibbashppVisitor, TheVisitorVisitsTheCommand) {
 
 TEST(LibbashppVisitor, TheVisitorVisitsThePipeline) {
     TestVisitor visitor;
-    bashpp::Pipeline pipeline{{bashpp::Command("echo", {"hello", "world"})}, bashpp::Command("cat", {})};
+    std::vector<bashpp::Command> commands;
+    commands.emplace_back("echo", std::vector<std::string>{"hello", "world"});
+    bashpp::Pipeline pipeline{std::move(commands), bashpp::Command("cat", {})};
     visitor.visit(pipeline);
     EXPECT_FALSE(visitor.visited_command);
     EXPECT_TRUE(visitor.visited_pipeline);
@@ -55,7 +57,9 @@ TEST(LibbashppVisitor, TheConstVisitorVisitsTheCommand) {
 
 TEST(LibbashppVisitor, TheConstVisitorVisitsThePipeline) {
     TestConstVisitor visitor;
-    bashpp::Pipeline pipeline{{bashpp::Command("echo", {"hello", "world"})}, bashpp::Command("cat", {})};
+    std::vector<bashpp::Command> commands;
+    commands.emplace_back("echo", std::vector<std::string>{"hello", "world"});
+    bashpp::Pipeline pipeline{std::move(commands), bashpp::Command("cat", {})};
     visitor.visit(pipeline);
     EXPECT_FALSE(visitor.visited_command);
     EXPECT_TRUE(visitor.visited_pipeline);

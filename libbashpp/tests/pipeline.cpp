@@ -2,7 +2,9 @@
 #include <gtest/gtest.h>
 
 TEST(LibbashppPipeline, TheCommandsCanBeQueried) {
-    bashpp::Pipeline pipeline{{bashpp::Command("echo", {"hello", "world"})}, bashpp::Command("cat", {})};
+    std::vector<bashpp::Command> commands;
+    commands.emplace_back("echo", std::vector<std::string>{"hello", "world"});
+    bashpp::Pipeline pipeline{std::move(commands), bashpp::Command("cat", {})};
     ASSERT_EQ(pipeline.commands().size(), 2);
     EXPECT_STREQ(pipeline.commands()[0].program().c_str(), "echo");
     EXPECT_STREQ(pipeline.commands()[1].program().c_str(), "cat");
@@ -35,7 +37,9 @@ struct TestConstVisitor : bashpp::ConstVisitor {
 };
 
 TEST(LibbashppPipeline, ItAcceptsTheVisitor) {
-    bashpp::Pipeline pipeline{{bashpp::Command("echo", {"hello", "world"})}, bashpp::Command("cat", {})};
+    std::vector<bashpp::Command> commands;
+    commands.emplace_back("echo", std::vector<std::string>{"hello", "world"});
+    bashpp::Pipeline pipeline{std::move(commands), bashpp::Command("cat", {})};
     TestVisitor visitor;
     pipeline.accept(visitor);
     EXPECT_FALSE(visitor.visited_command);
@@ -43,7 +47,9 @@ TEST(LibbashppPipeline, ItAcceptsTheVisitor) {
 }
 
 TEST(LibbashppPipeline, ItAcceptsTheConstVisitor) {
-    bashpp::Pipeline pipeline{{bashpp::Command("echo", {"hello", "world"})}, bashpp::Command("cat", {})};
+    std::vector<bashpp::Command> commands;
+    commands.emplace_back("echo", std::vector<std::string>{"hello", "world"});
+    bashpp::Pipeline pipeline{std::move(commands), bashpp::Command("cat", {})};
     TestConstVisitor visitor;
     pipeline.accept(visitor);
     EXPECT_FALSE(visitor.visited_command);

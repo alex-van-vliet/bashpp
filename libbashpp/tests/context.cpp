@@ -1,5 +1,5 @@
-#include <bashpp/context.hpp>
 #include <bashpp/command.hpp>
+#include <bashpp/context.hpp>
 #include <bashpp/pipeline.hpp>
 #include <gtest/gtest.h>
 #include <sstream>
@@ -16,7 +16,9 @@ TEST(LibbashppContext, TheCommandCanBePrinted) {
 
 TEST(LibbashppContext, ThePipelineCanBePrinted) {
     bashpp::Context context;
-    bashpp::Pipeline pipeline{{bashpp::Command("echo", {"hello", "world"})}, bashpp::Command("cat", {})};
+    std::vector<bashpp::Command> commands;
+    commands.emplace_back("echo", std::vector<std::string>{"hello", "world"});
+    bashpp::Pipeline pipeline{std::move(commands), bashpp::Command("cat", {})};
     std::stringstream ss;
     context.print(ss, pipeline);
 

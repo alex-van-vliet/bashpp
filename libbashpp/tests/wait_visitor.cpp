@@ -21,7 +21,7 @@ TEST(LibbashppWaitVisitor, ACommandCannotBeWaitedTwice) {
     bashpp::Command command{"echo", {"hello", "world"}};
 
     // Considering process with pid 0 as finished
-    command.process(0);
+    command.setupProcess();
     try {
         visitor.visit(command);
         FAIL() << "Expected std::logic_error";

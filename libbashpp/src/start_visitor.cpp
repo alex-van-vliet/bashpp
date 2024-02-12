@@ -9,11 +9,34 @@
 namespace {
     using namespace bashpp;
 
-    class RedirectionApplyVisitor {
+    FileDescriptor openTemporaryFile() {
+        char filename[] = "bashpp.XXXXXXXXX";
+        FileDescriptor fd{wrappers::mkstemp(filename)};
+        wrappers::unlink(filename);
+        wrappers::fcntlSetFD(fd.fd(), wrappers::fcntlGetFD(fd.fd()) | FD_CLOEXEC);
+        return fd;
+    }
+
+    class RedirectionSetupVisitor {
         int fd_;
+        Command &command_;
 
     public:
-        explicit RedirectionApplyVisitor(int fd) : fd_{fd} {}
+        RedirectionSetupVisitor(int fd, Command &command) : fd_{fd}, command_{command} {}
+
+        void operator()(const OutputVariableRedirection &) {
+            command_.process()->addRedirection(fd_, openTemporaryFile());
+        }
+        void operator()(const auto &) {
+        }
+    };
+
+    class RedirectionApplyVisitor {
+        int fd_;
+        Command &command_;
+
+    public:
+        explicit RedirectionApplyVisitor(int fd, Command &command) : fd_{fd}, command_{command} {}
 
         void operator()(const FDRedirection &r) const {
             wrappers::dup2(r.fd, fd_);
@@ -36,6 +59,20 @@ namespace {
         void operator()(const InputOutputPathRedirection &r) const {
             (*this)(FDRedirection{wrappers::open(r.path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC,
                                                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)});
+        }
+
+        void operator()(const InputVariableRedirection &r) const {
+            auto tmp = openTemporaryFile();
+            std::span<const std::byte> bytes = r.bytes;
+            while (!bytes.empty()) {
+                std::size_t written = wrappers::write(tmp.fd(), bytes.data(), bytes.size());
+                bytes = bytes.subspan(written);
+            }
+            wrappers::lseek(tmp.fd(), 0, SEEK_SET);
+            (*this)(FDRedirection{tmp.fd()});
+        }
+        void operator()(const OutputVariableRedirection &) const {
+            (*this)(FDRedirection{command_.process()->getRedirectionTempFD(fd_)});
         }
     };
 }// namespace
@@ -78,10 +115,14 @@ namespace bashpp {
         if (command.process()) {
             throw std::logic_error{"Command was already started"};
         }
-        command.process(wrappers::fork());
+        command.setupProcess();
+        for (const auto &redirection: command.redirections()) {
+            std::visit(RedirectionSetupVisitor{redirection.fd, command}, redirection.redirection);
+        }
+        command.process()->pid(wrappers::fork());
         if (command.process()->pid() == 0) {
             for (const auto &redirection: command.redirections()) {
-                std::visit(RedirectionApplyVisitor{redirection.fd}, redirection.redirection);
+                std::visit(RedirectionApplyVisitor{redirection.fd, command}, redirection.redirection);
             }
             auto args = constructArguments(command);
             auto env = constructEnvironment(context_.env());

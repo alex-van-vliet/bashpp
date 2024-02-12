@@ -13,6 +13,12 @@ namespace bashpp {
             commands_.emplace_back(std::move(last));
         }
 
+        Pipeline(const Pipeline&) = delete;
+        Pipeline& operator=(const Pipeline&) = delete;
+
+        Pipeline(Pipeline&&) = default;
+        Pipeline& operator=(Pipeline&&) = default;
+
         const std::vector<Command> &commands() const {
             return commands_;
         }

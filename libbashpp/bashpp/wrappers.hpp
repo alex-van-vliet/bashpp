@@ -71,6 +71,7 @@ namespace bashpp::wrappers {
     using Allow = details::Allow;
 
     constexpr details::Wrapper open{details::open};
+    constexpr details::Wrapper mkstemp{::mkstemp};
     constexpr details::Wrapper unlink{::unlink};
     constexpr details::Wrapper close{::close};
     constexpr details::Wrapper read{::read};
