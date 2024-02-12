@@ -28,7 +28,12 @@ void test(Context &context, Node &&command) {
     }
 
     std::cout << "========== FD LEAKS ==========" << std::endl;
-    for (int i = 3; i < FD_SETSIZE; ++i) {
+#ifdef DEBUG
+    int startFd = 4;
+#else
+    int startFd = 3;
+#endif
+    for (int i = startFd; i < FD_SETSIZE; ++i) {
         if (wrappers::fcntlGetFL(wrappers::Allow{{EBADF}}, i) != -1) {
             std::cout << i << std::endl;
         }

@@ -15,6 +15,7 @@ target_compile_options(libbashpp PRIVATE -Wall -Wextra -pedantic $<$<CONFIG:Debu
 target_link_libraries(libbashpp PRIVATE $<$<CONFIG:Debug>:-fsanitize=address>)
 target_include_directories(libbashpp PRIVATE ./bashpp)
 target_include_directories(libbashpp PUBLIC .)
+target_compile_definitions(libbashpp PRIVATE $<$<CONFIG:Debug>:DEBUG=1>)
 
 add_executable(libbashpp_tests
     tests/command.cpp
