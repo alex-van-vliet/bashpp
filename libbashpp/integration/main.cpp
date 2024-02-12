@@ -45,6 +45,10 @@ void test_redirect_err_to_out(Context &context) {
     test(context, Command{"script.py", {"--error", "Hello, world!\n"}, {{err, FDRedirection{out}}}});
 }
 
+void test_close_stdout(Context &context) {
+    test(context, Command{"script.py", {"--test-stdout"}, {{out, CloseFDRedirection{}}}});
+}
+
 int main(int argc, const char *argv[]) {
     std::map<std::string_view, void (*)(Context &)> tests{
             {"test_simple_echo", test_simple_echo},
@@ -53,6 +57,7 @@ int main(int argc, const char *argv[]) {
             {"test_signal", test_signal},
             {"test_redirect_out_to_err", test_redirect_out_to_err},
             {"test_redirect_err_to_out", test_redirect_err_to_out},
+            {"test_close_stdout", test_close_stdout},
     };
 
     if (argc != 2) {

@@ -43,3 +43,7 @@ def test_redirect_out_to_err():
 
 def test_redirect_err_to_out():
     run_test('test_redirect_err_to_out', stdout='Hello, world!\n')
+
+
+def test_close_stdout():
+    run_test('test_close_stdout', stderr='Stdout is closed\n')

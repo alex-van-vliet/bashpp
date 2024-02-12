@@ -50,6 +50,15 @@ class Signal(typing.NamedTuple):
         signal.raise_signal(self.number)
 
 
+class TestStdout(typing.NamedTuple):
+    def execute(self):
+        if sys.stdout is None:
+            print('Stdout is closed', file=sys.stderr)
+        else:
+            print('Stdout is open')
+            print('Stdout is open', file=sys.stderr)
+
+
 def main(prog, *args):
     parser = argparse.ArgumentParser(prog=prog, description='Script to run various scenarios')
     parser.add_argument('--print', dest='instructions', action='append', type=Print.build,
@@ -60,6 +69,8 @@ def main(prog, *args):
                         help='Exits with the given code')
     parser.add_argument('--signal', dest='instructions', action='append', type=Signal.build,
                         help='Sends the signal with the given number to itself')
+    parser.add_argument('--test-stdout', dest='instructions', action='append_const', const=TestStdout(),
+                        help='Prints whether stdout is open/closed to stderr')
 
     args = parser.parse_args(args)
 

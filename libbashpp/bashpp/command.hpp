@@ -14,10 +14,11 @@ namespace bashpp {
     struct FDRedirection {
         int fd;
     };
+    struct CloseFDRedirection {};
 
     struct Redirection {
         int fd;
-        std::variant<FDRedirection> redirection;
+        std::variant<FDRedirection, CloseFDRedirection> redirection;
     };
 
     class Command : public details::NodeImpl<Command> {

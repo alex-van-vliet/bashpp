@@ -18,6 +18,9 @@ namespace {
         void operator()(const FDRedirection &r) const {
             wrappers::dup2(r.fd, fd_);
         }
+        void operator()(const CloseFDRedirection &) const {
+            wrappers::close(fd_);
+        }
     };
 }// namespace
 
