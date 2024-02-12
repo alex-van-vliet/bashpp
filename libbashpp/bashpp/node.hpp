@@ -1,6 +1,8 @@
 #pragma once
 
 #include <bashpp/visitor.hpp>
+#include <cstddef>
+#include <vector>
 
 namespace bashpp {
     class Context;
@@ -14,6 +16,9 @@ namespace bashpp {
 
         void start(Context &context);
         void wait();
+
+        virtual int exit() const = 0;
+        virtual const std::vector<std::byte>& redirection(int fd) const = 0;
     };
 
     namespace details {

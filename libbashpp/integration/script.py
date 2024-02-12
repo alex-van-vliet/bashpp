@@ -73,6 +73,19 @@ class Read(typing.NamedTuple):
         print(self.stream.read(), end='', file=sys.stderr)
 
 
+class Filter(typing.NamedTuple):
+    word: str
+
+    @classmethod
+    def build(cls, word: str):
+        return cls(word)
+
+    def execute(self):
+        while line := sys.stdin.readline():
+            if self.word not in line:
+                print(line, end='')
+
+
 def main(prog, *args):
     parser = argparse.ArgumentParser(prog=prog, description='Script to run various scenarios')
     parser.add_argument('--print', dest='instructions', action='append', type=Print.build,
@@ -87,6 +100,8 @@ def main(prog, *args):
                         help='Prints whether stdout is open/closed to stderr')
     parser.add_argument('--read', dest='instructions', action='append', type=Read.build,
                         help='Read from stdin or stdout and prints it on stderr')
+    parser.add_argument('--filter', dest='instructions', action='append', type=Filter.build,
+                        help='Read from stdin and removes the lines containing the word')
 
     args = parser.parse_args(args)
 

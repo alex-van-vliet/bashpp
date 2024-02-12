@@ -156,6 +156,32 @@ namespace bashpp {
     }
 
     void StartVisitor::visit(Pipeline &pipeline) {
-        (void) pipeline;
+        FileDescriptor previousOutput;
+        for (std::size_t i = pipeline.commands().size() - 1; i > 0; --i) {
+            int fds[2];
+            wrappers::pipe(fds);
+
+            FileDescriptor input{fds[0]};
+            FileDescriptor output{fds[1]};
+
+            wrappers::fcntlSetFD(input.fd(), wrappers::fcntlGetFD(fds[0]) | FD_CLOEXEC);
+            wrappers::fcntlSetFD(output.fd(), wrappers::fcntlGetFD(fds[1]) | FD_CLOEXEC);
+
+            // Set input to current command
+            // Start current command
+            // Set output to next command
+
+            auto& previous = pipeline.commands()[i - 1];
+            auto& current = pipeline.commands()[i];
+
+            previous.redirections().emplace(previous.redirections().begin(), out, FDRedirection{output.fd()});
+            current.redirections().emplace(current.redirections().begin(), in, FDRedirection{input.fd()});
+
+            visit(pipeline.commands()[i]);
+
+            // Keep output fd open until previous has run
+            previousOutput = std::move(output);
+        }
+        visit(pipeline.commands()[0]);
     }
 }// namespace bashpp

@@ -52,11 +52,11 @@ namespace bashpp {
             : program_{std::move(program)}, arguments_{std::move(arguments)}, redirections_{std::move(redirections)},
               process_{std::nullopt} {}
 
-        Command(const Command&) = delete;
-        Command& operator=(const Command&) = delete;
+        Command(const Command &) = delete;
+        Command &operator=(const Command &) = delete;
 
-        Command(Command&&) = default;
-        Command& operator=(Command&&) = default;
+        Command(Command &&) = default;
+        Command &operator=(Command &&) = default;
 
         const std::string &program() const {
             return program_;
@@ -64,6 +64,10 @@ namespace bashpp {
 
         const std::vector<std::string> &arguments() const {
             return arguments_;
+        }
+
+        std::vector<Redirection> &redirections() {
+            return redirections_;
         }
 
         const std::vector<Redirection> &redirections() const {
@@ -82,7 +86,7 @@ namespace bashpp {
             process_.emplace();
         }
 
-        pid_t exit() const{
+        pid_t exit() const override {
             if (!process_) {
                 throw std::logic_error{"Command was not started"};
             }
@@ -92,7 +96,7 @@ namespace bashpp {
             return process_->exit();
         }
 
-        const std::vector<std::byte>& redirection(int fd) const {
+        const std::vector<std::byte> &redirection(int fd) const override {
             if (!process_) {
                 throw std::logic_error{"Command was not started"};
             }

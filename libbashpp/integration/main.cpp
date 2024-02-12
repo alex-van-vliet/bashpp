@@ -1,5 +1,6 @@
 #include <bashpp/command.hpp>
 #include <bashpp/context.hpp>
+#include <bashpp/pipeline.hpp>
 #include <filesystem>
 #include <format>
 #include <iostream>
@@ -9,24 +10,35 @@
 
 using namespace bashpp;
 
-void test(Context &context, Node &&command) {
+void test(Context &context, Node &&node) {
     std::cout << "========== STDOUT START ==========" << std::endl;
     std::cerr << "========== STDERR START ==========" << std::endl;
-    command.start(context);
-    command.wait();
+    node.start(context);
+    node.wait();
     std::cout << "========== STDOUT STOP ==========" << std::endl;
     std::cerr << "========== STDERR STOP ==========" << std::endl;
 
     std::cout << "========== CAPTURED ==========" << std::endl;
-    auto &p = *dynamic_cast<Command &>(command).process();
-    std::cout << "EXIT CODE: " << +p.exit() << std::endl;
-    for (const auto &redirection: p.redirections()) {
-        std::cout << "---------- " << redirection.first << " START ----------" << std::endl;
-        std::cout << std::string_view(reinterpret_cast<const char *>(redirection.second.second.data()),
-                                      redirection.second.second.size());
-        std::cout << "---------- " << redirection.first << " STOP ----------" << std::endl;
+    std::cout << "EXIT CODE: " << +node.exit() << std::endl;
+    if (auto command = dynamic_cast<Command *>(&node)) {
+        auto &process = command->process();
+        for (const auto &redirection: process->redirections()) {
+            std::cout << "---------- " << redirection.first << " START ----------" << std::endl;
+            std::cout << std::string_view(reinterpret_cast<const char *>(redirection.second.second.data()),
+                                          redirection.second.second.size());
+            std::cout << "---------- " << redirection.first << " STOP ----------" << std::endl;
+        }
+    } else if (auto pipeline = dynamic_cast<Pipeline *>(&node)) {
+        auto &process = pipeline->commands().back().process();
+        for (const auto &redirection: process->redirections()) {
+            std::cout << "---------- " << redirection.first << " START ----------" << std::endl;
+            std::cout << std::string_view(reinterpret_cast<const char *>(redirection.second.second.data()),
+                                          redirection.second.second.size());
+            std::cout << "---------- " << redirection.first << " STOP ----------" << std::endl;
+        }
+    } else {
+        throw std::logic_error{"Invalid node"};
     }
-
     std::cout << "========== FD LEAKS ==========" << std::endl;
 #ifdef DEBUG
     int startFd = 4;
@@ -94,6 +106,19 @@ void test_redirect_stdout_to_variable(Context &context) {
     test(context, Command{"script.py", {"--print", "Printed from test\n"}, {{out, OutputVariableRedirection{}}}});
 }
 
+void test_pipe_two_processes(Context &context) {
+    test(context,
+         Command{"script.py", {"--print", "First line\nInvalid line\nSecond line\n"}} |
+                 Command{"script.py", {"--filter", "Invalid"}});
+}
+
+void test_pipe_three_processes(Context &context) {
+    test(context,
+         Command{"script.py", {"--print", "First line\nInvalid line\nSecond line\nErroneous line\n"}} |
+                 Command{"script.py", {"--filter", "Invalid"}} |
+                 Command{"script.py", {"--filter", "Erroneous"}});
+}
+
 int main(int argc, const char *argv[]) {
     std::map<std::string_view, void (*)(Context &)> tests{
             {"test_simple_echo", test_simple_echo},
@@ -109,6 +134,8 @@ int main(int argc, const char *argv[]) {
             {"test_redirect_stdout_to_read_write", test_redirect_stdout_to_read_write},
             {"test_redirect_stdin_from_variable", test_redirect_stdin_from_variable},
             {"test_redirect_stdout_to_variable", test_redirect_stdout_to_variable},
+            {"test_pipe_two_processes", test_pipe_two_processes},
+            {"test_pipe_three_processes", test_pipe_three_processes},
     };
 
     if (argc != 2) {

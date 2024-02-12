@@ -66,6 +66,8 @@ namespace bashpp {
     }
 
     void WaitVisitor::visit(Pipeline &pipeline) {
-        (void)pipeline;
+        for (size_t i = pipeline.commands().size(); i > 0; --i) {
+            visit(pipeline.commands()[i - 1]);
+        }
     }
 }// namespace bashpp

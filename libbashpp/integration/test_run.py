@@ -123,3 +123,11 @@ def test_redirect_stdin_from_variable():
 
 def test_redirect_stdout_to_variable():
     run_test('test_redirect_stdout_to_variable', variables={1: 'Printed from test\n'})
+
+
+def test_pipe_two_processes():
+    run_test('test_pipe_two_processes', stdout='First line\nSecond line\n')
+
+
+def test_pipe_three_processes():
+    run_test('test_pipe_two_processes', stdout='First line\nSecond line\n')
