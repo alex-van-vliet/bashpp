@@ -37,12 +37,22 @@ void test_signal(Context &context) {
     test(context, Command{"script.py", {"--signal", "9"}});
 }
 
+void test_redirect_out_to_err(Context &context) {
+    test(context, Command{"script.py", {"--print", "Hello, world!\n"}, {{out, FDRedirection{err}}}});
+}
+
+void test_redirect_err_to_out(Context &context) {
+    test(context, Command{"script.py", {"--error", "Hello, world!\n"}, {{err, FDRedirection{out}}}});
+}
+
 int main(int argc, const char *argv[]) {
     std::map<std::string_view, void (*)(Context &)> tests{
             {"test_simple_echo", test_simple_echo},
             {"test_simple_error", test_simple_error},
             {"test_exit", test_exit},
             {"test_signal", test_signal},
+            {"test_redirect_out_to_err", test_redirect_out_to_err},
+            {"test_redirect_err_to_out", test_redirect_err_to_out},
     };
 
     if (argc != 2) {

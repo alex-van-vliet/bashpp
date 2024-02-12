@@ -35,3 +35,11 @@ def test_exit():
 
 def test_signal():
     run_test('test_signal', exit=137)
+
+
+def test_redirect_out_to_err():
+    run_test('test_redirect_out_to_err', stderr='Hello, world!\n')
+
+
+def test_redirect_err_to_out():
+    run_test('test_redirect_err_to_out', stdout='Hello, world!\n')

@@ -6,6 +6,21 @@
 #include <iostream>
 #include <ranges>
 
+namespace {
+    using namespace bashpp;
+
+    class RedirectionApplyVisitor {
+        int fd_;
+
+    public:
+        explicit RedirectionApplyVisitor(int fd) : fd_{fd} {}
+
+        void operator()(const FDRedirection &r) const {
+            wrappers::dup2(r.fd, fd_);
+        }
+    };
+}// namespace
+
 namespace bashpp {
     std::vector<const char *> StartVisitor::constructArguments(const Command &command) {
         std::vector<const char *> result;
@@ -46,6 +61,9 @@ namespace bashpp {
         }
         command.process(wrappers::fork());
         if (command.process()->pid() == 0) {
+            for (const auto &redirection: command.redirections()) {
+                std::visit(RedirectionApplyVisitor{redirection.fd}, redirection.redirection);
+            }
             auto args = constructArguments(command);
             auto env = constructEnvironment(context_.env());
 
