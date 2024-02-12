@@ -1,5 +1,6 @@
 add_library(libbashpp
     bashpp/command.hpp src/command.cpp
+    bashpp/env.hpp src/env.cpp
     bashpp/node.hpp src/node.cpp
     bashpp/pipeline.hpp src/pipeline.cpp
     bashpp/process.hpp src/process.cpp
@@ -12,6 +13,7 @@ target_include_directories(libbashpp PUBLIC .)
 
 add_executable(libbashpp_tests
     tests/command.cpp
+    tests/env.cpp
     tests/pipeline.cpp
     tests/visitor.cpp
 )
