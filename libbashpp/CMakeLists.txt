@@ -22,6 +22,7 @@ add_executable(libbashpp_tests
     tests/env.cpp
     tests/file_descriptor.cpp
     tests/pipeline.cpp
+    tests/process.cpp
     tests/start_visitor.cpp
     tests/visitor.cpp
     tests/wait_visitor.cpp

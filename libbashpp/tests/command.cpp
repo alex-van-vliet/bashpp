@@ -1,6 +1,7 @@
 #include <bashpp/command.hpp>
 #include <bashpp/visitor.hpp>
 #include <gtest/gtest.h>
+#include <span>
 
 TEST(LibbashppCommand, TheProgramCanBeQueried) {
     bashpp::Command command{"echo", {"hello", "world"}};
@@ -54,4 +55,79 @@ TEST(LibbashppCommand, ItAcceptsTheConstVisitor) {
     command.accept(visitor);
     EXPECT_TRUE(visitor.visited_command);
     EXPECT_FALSE(visitor.visited_pipeline);
+}
+
+TEST(LibbashppCommand, TheExitCodeCanBeQueried) {
+    bashpp::Command command{"echo", {"hello", "world"}};
+    command.setupProcess();
+    // Considering process with pid 0 as finished
+    command.process()->exit(10);
+
+    EXPECT_EQ(command.exit(), 10);
+}
+
+TEST(LibbashppCommand, GettingTheExitCodeThrowsBeforeStart) {
+    bashpp::Command command{"echo", {"hello", "world"}};
+    try {
+        command.exit();
+        FAIL() << "Expected std::logic_error";
+    } catch (const std::logic_error &e) {
+        EXPECT_STREQ(e.what(), "Command was not started");
+    } catch (...) {
+        FAIL() << "Expected std::logic_error";
+    }
+}
+
+TEST(LibbashppCommand, GettingTheExitCodeThrowsBeforeWait) {
+    bashpp::Command command{"echo", {"hello", "world"}};
+    command.setupProcess();
+    command.process()->pid(1);
+    try {
+        command.exit();
+        FAIL() << "Expected std::logic_error";
+    } catch (const std::logic_error &e) {
+        EXPECT_STREQ(e.what(), "Command was not waited");
+    } catch (...) {
+        FAIL() << "Expected std::logic_error";
+    }
+}
+
+TEST(LibbashppCommand, ARedirectionBufferCanBeQueried) {
+    bashpp::Command command{"echo", {"hello", "world"}};
+    command.setupProcess();
+    // Considering process with pid 0 as finished
+    command.process()->exit(10);
+    command.process()->addRedirection(1, bashpp::FileDescriptor{-1});
+    const char *data = "Test";
+    std::span<const std::byte> span{reinterpret_cast<const std::byte *>(data), strlen(data)};
+    std::vector<std::byte> vector{span.begin(), span.end()};
+    command.process()->finishRedirection(1, vector);
+
+    EXPECT_EQ(command.redirection(1), vector);
+}
+
+TEST(LibbashppCommand, GettingARedirectionBufferThrowsBeforeStart) {
+    bashpp::Command command{"echo", {"hello", "world"}};
+    try {
+        command.redirection(1);
+        FAIL() << "Expected std::logic_error";
+    } catch (const std::logic_error &e) {
+        EXPECT_STREQ(e.what(), "Command was not started");
+    } catch (...) {
+        FAIL() << "Expected std::logic_error";
+    }
+}
+
+TEST(LibbashppCommand, GettingARedirectionBufferThrowsBeforeWait) {
+    bashpp::Command command{"echo", {"hello", "world"}};
+    command.setupProcess();
+    command.process()->pid(1);
+    try {
+        command.redirection(1);
+        FAIL() << "Expected std::logic_error";
+    } catch (const std::logic_error &e) {
+        EXPECT_STREQ(e.what(), "Command was not waited");
+    } catch (...) {
+        FAIL() << "Expected std::logic_error";
+    }
 }

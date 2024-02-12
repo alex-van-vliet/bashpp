@@ -81,5 +81,25 @@ namespace bashpp {
         void setupProcess() {
             process_.emplace();
         }
+
+        pid_t exit() const{
+            if (!process_) {
+                throw std::logic_error{"Command was not started"};
+            }
+            if (process_->pid() != 0) {
+                throw std::logic_error{"Command was not waited"};
+            }
+            return process_->exit();
+        }
+
+        const std::vector<std::byte>& redirection(int fd) const {
+            if (!process_) {
+                throw std::logic_error{"Command was not started"};
+            }
+            if (process_->pid() != 0) {
+                throw std::logic_error{"Command was not waited"};
+            }
+            return process_->getRedirectionBuffer(fd);
+        }
     };
 }// namespace bashpp

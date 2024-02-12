@@ -3,8 +3,8 @@
 #include <bashpp/file_descriptor.hpp>
 #include <cstdint>
 #include <sys/types.h>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace bashpp {
@@ -39,7 +39,7 @@ namespace bashpp {
             exit_ = exit;
         }
 
-        const std::unordered_map<int, std::pair<FileDescriptor, std::vector<std::byte>>>& redirections() const {
+        const std::unordered_map<int, std::pair<FileDescriptor, std::vector<std::byte>>> &redirections() const {
             return capturedRedirections_;
         }
 
@@ -60,9 +60,17 @@ namespace bashpp {
         int getRedirectionTempFD(int fd) const {
             auto it = capturedRedirections_.find(fd);
             if (it == capturedRedirections_.end()) {
-                return -1;
+                throw std::logic_error{"Redirection not setup"};
             }
             return it->second.first.fd();
+        }
+
+        const std::vector<std::byte> &getRedirectionBuffer(int fd) const {
+            auto it = capturedRedirections_.find(fd);
+            if (it == capturedRedirections_.end()) {
+                throw std::logic_error{"Redirection not setup"};
+            }
+            return it->second.second;
         }
     };
 }// namespace bashpp
