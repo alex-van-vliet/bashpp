@@ -3,7 +3,7 @@
 #include <bashpp/command.hpp>
 #include <bashpp/pipeline.hpp>
 #include <bashpp/visitor.hpp>
-#include <format>
+#include <iomanip>
 
 namespace bashpp {
     class PrintVisitor : public ConstVisitor {
@@ -17,9 +17,9 @@ namespace bashpp {
         }
 
         void visit(const Command &command) override {
-            os_ << std::format("{:?}", command.program());
+            os_ << std::quoted(command.program());
             for (const auto &argument: command.arguments()) {
-                os_ << std::format(" {:?}", argument);
+                os_ << ' ' << std::quoted(argument);
             }
         }
 
