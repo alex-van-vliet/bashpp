@@ -16,4 +16,6 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 include(GoogleTest)
 
+find_package(Pytest REQUIRED)
+
 add_subdirectory(libbashpp)

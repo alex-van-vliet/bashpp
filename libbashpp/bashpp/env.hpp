@@ -25,6 +25,10 @@ namespace bashpp {
     public:
         Env();
 
+        void clear() {
+            env_.clear();
+        }
+
         std::string_view get(std::string_view key) const {
             auto it = env_.find(key);
             if (it == env_.end()) {
@@ -42,6 +46,10 @@ namespace bashpp {
             valueToInsert += "=";
             valueToInsert += value;
             env_.insert_or_assign(std::move(key), std::move(valueToInsert));
+        }
+
+        const std::unordered_map<std::string, std::string, details::string_hash, std::equal_to<>>& entries() const {
+            return env_;
         }
     };
 }// namespace bashpp

@@ -78,6 +78,7 @@ namespace bashpp::wrappers {
     constexpr details::Wrapper dup{::dup};
     constexpr details::Wrapper dup2{::dup2};
     constexpr details::Wrapper pipe{::pipe};
+    constexpr details::Wrapper fork{::fork};
     constexpr details::Wrapper execve{::execve};
     constexpr details::Wrapper waitpid{::waitpid};
     constexpr details::Wrapper lseek{::lseek};

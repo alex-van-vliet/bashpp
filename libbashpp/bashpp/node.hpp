@@ -3,12 +3,17 @@
 #include <bashpp/visitor.hpp>
 
 namespace bashpp {
+    class Context;
+
     class Node {
     public:
         virtual ~Node() = default;
 
         virtual void accept(Visitor &) = 0;
         virtual void accept(ConstVisitor &) const = 0;
+
+        void start(Context &context);
+        void wait();
     };
 
     namespace details {
