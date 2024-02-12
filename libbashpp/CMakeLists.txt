@@ -5,6 +5,7 @@ add_library(libbashpp
     bashpp/pipeline.hpp src/pipeline.cpp
     bashpp/process.hpp src/process.cpp
     bashpp/visitor.hpp src/visitor.cpp
+    bashpp/wrappers.hpp src/wrappers.cpp
 )
 target_compile_options(libbashpp PRIVATE -Wall -Wextra -pedantic $<$<CONFIG:Debug>:-Werror -fsanitize=address> $<$<CONFIG:Release>:-O3>)
 target_link_libraries(libbashpp PRIVATE $<$<CONFIG:Debug>:-fsanitize=address>)
@@ -16,6 +17,7 @@ add_executable(libbashpp_tests
     tests/env.cpp
     tests/pipeline.cpp
     tests/visitor.cpp
+    tests/wrappers.cpp
 )
 target_compile_options(libbashpp_tests PRIVATE -Wall -Wextra -pedantic $<$<CONFIG:Debug>:-Werror -fsanitize=address> $<$<CONFIG:Release>:-O3>)
 target_link_libraries(libbashpp_tests PRIVATE libbashpp GTest::gtest_main $<$<CONFIG:Debug>:-fsanitize=address>)
