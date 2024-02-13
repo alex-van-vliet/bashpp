@@ -50,7 +50,9 @@ namespace bashpp {
         std::optional<Process> process_;
 
     public:
-        Command(std::string program, std::vector<std::string> arguments, std::vector<Redirection> redirections = {})
+        explicit Command(std::string program,
+                         std::vector<std::string> arguments = {},
+                         std::vector<Redirection> redirections = {})
             : program_{std::move(program)}, arguments_{std::move(arguments)}, redirections_{std::move(redirections)},
               process_{std::nullopt} {}
 
