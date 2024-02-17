@@ -9,7 +9,7 @@ def no_action():
 
 
 def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = '', exit=0, setup=no_action,
-             teardown=no_action, variables=None):
+             teardown=no_action, variables=None, timeout=10):
     with tempfile.TemporaryDirectory() as test_dir:
         os.chdir(test_dir)
         setup()
@@ -17,7 +17,11 @@ def run_test(test_name: str, stdin: str = '', stdout: str = '', stderr: str = ''
                                    executable=os.getenv('BASHPP_INTEGRATION_EXE'), stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
-        out, err = process.communicate(stdin.encode())
+        try:
+            out, err = process.communicate(stdin.encode(), timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            assert False, f'Process timed out'
         assert process.returncode == 0
 
         out = out.decode()
