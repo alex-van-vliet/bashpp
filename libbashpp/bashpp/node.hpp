@@ -14,8 +14,7 @@ namespace bashpp {
         virtual void accept(Visitor &) = 0;
         virtual void accept(ConstVisitor &) const = 0;
 
-        void start(Context &context);
-        void wait();
+        void run(Context &context);
 
         virtual int exit() const = 0;
         virtual const std::vector<std::byte>& redirection(int fd) const = 0;

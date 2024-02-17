@@ -5,11 +5,11 @@
 #include <vector>
 
 namespace bashpp {
-    class StartVisitor : public Visitor {
+    class RunVisitor : public Visitor {
         Context &context_;
 
     public:
-        StartVisitor(Context &context) : context_{context} {}
+        RunVisitor(Context &context) : context_{context} {}
 
         static std::vector<const char *> constructArguments(const Command &command);
         static std::vector<const char *> constructEnvironment(const Env &env);
@@ -17,5 +17,9 @@ namespace bashpp {
         void visit(Command &command) override;
 
         void visit(Pipeline &pipeline) override;
+
+    private:
+        void start(Command &command, int inPipe = -1, int outPipe = -1);
+        void wait(Command &command);
     };
 }// namespace bashpp

@@ -14,8 +14,7 @@ using namespace bashpp;
 using namespace nlohmann;
 
 void test(Context &context, Node &&node) {
-    node.start(context);
-    node.wait();
+    node.run(context);
     std::cout << "========== CAPTURED ==========" << std::endl;
 
     json result;

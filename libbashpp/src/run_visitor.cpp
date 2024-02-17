@@ -1,4 +1,4 @@
-#include "start_visitor.hpp"
+#include "run_visitor.hpp"
 
 #include <bashpp/command.hpp>
 #include <bashpp/pipeline.hpp>
@@ -75,10 +75,41 @@ namespace {
             (*this)(FDRedirection{command_.process()->getRedirectionTempFD(fd_)});
         }
     };
+
+    class RedirectionTeardownVisitor {
+        int fd_;
+        Command &command_;
+
+    public:
+        RedirectionTeardownVisitor(int fd, Command &command) : fd_{fd}, command_{command} {}
+
+        void operator()(const OutputVariableRedirection &) {
+            int fd = command_.process()->getRedirectionTempFD(fd_);
+
+            wrappers::lseek(fd, SEEK_SET, 0);
+
+            constexpr std::size_t BUFFER_SIZE = 2048;
+
+            std::vector<std::byte> buffer;
+
+            buffer.resize(BUFFER_SIZE);
+            std::size_t read = wrappers::read(fd, buffer.data(), BUFFER_SIZE);
+            while (read == BUFFER_SIZE) {
+                std::size_t current_size = buffer.size();
+                buffer.resize(current_size + BUFFER_SIZE);
+                read = wrappers::read(fd, buffer.data() + current_size, BUFFER_SIZE);
+            }
+            buffer.resize(buffer.size() + read - BUFFER_SIZE);
+
+            command_.process()->finishRedirection(fd_, std::move(buffer));
+        }
+        void operator()(const auto &) {
+        }
+    };
 }// namespace
 
 namespace bashpp {
-    std::vector<const char *> StartVisitor::constructArguments(const Command &command) {
+    std::vector<const char *> RunVisitor::constructArguments(const Command &command) {
         std::vector<const char *> result;
         result.reserve(1 + command.arguments().size() + 1);
 
@@ -98,7 +129,7 @@ namespace bashpp {
         return result;
     }
 
-    std::vector<const char *> StartVisitor::constructEnvironment(const Env &env) {
+    std::vector<const char *> RunVisitor::constructEnvironment(const Env &env) {
         std::vector<const char *> result;
         result.reserve(env.entries().size() + 1);
 
@@ -111,16 +142,28 @@ namespace bashpp {
         return result;
     }
 
-    void StartVisitor::visit(Command &command) {
+    void RunVisitor::start(Command &command, int inPipe, int outPipe) {
         if (command.process()) {
             throw std::logic_error{"Command was already started"};
         }
         command.setupProcess();
+        if (inPipe >= 0) {
+            RedirectionSetupVisitor{in, command}(FDRedirection{inPipe});
+        }
+        if (outPipe >= 0) {
+            RedirectionSetupVisitor{out, command}(FDRedirection{outPipe});
+        }
         for (const auto &redirection: command.redirections()) {
             std::visit(RedirectionSetupVisitor{redirection.fd, command}, redirection.redirection);
         }
         command.process()->pid(wrappers::fork());
         if (command.process()->pid() == 0) {
+            if (inPipe >= 0) {
+                RedirectionApplyVisitor{in, command}(FDRedirection{inPipe});
+            }
+            if (outPipe >= 0) {
+                RedirectionApplyVisitor{out, command}(FDRedirection{outPipe});
+            }
             for (const auto &redirection: command.redirections()) {
                 std::visit(RedirectionApplyVisitor{redirection.fd, command}, redirection.redirection);
             }
@@ -155,7 +198,36 @@ namespace bashpp {
         }
     }
 
-    void StartVisitor::visit(Pipeline &pipeline) {
+    void RunVisitor::wait(Command &command) {
+        if (!command.process()) {
+            throw std::logic_error{"Command was not started"};
+        }
+        if (command.process()->pid() == 0) {
+            throw std::logic_error{"Command was already waited"};
+        }
+
+        int status;
+        wrappers::waitpid(command.process()->pid(), &status, 0);
+        command.process()->pid(0);
+
+        if (WIFEXITED(status)) {
+            command.process()->exit(WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            command.process()->exit(128 + WTERMSIG(status));
+        } else {
+            // Should not happen, leave 0
+        }
+        for (const auto &redirection: command.redirections()) {
+            std::visit(RedirectionTeardownVisitor{redirection.fd, command}, redirection.redirection);
+        }
+    }
+
+    void RunVisitor::visit(Command &command) {
+        start(command);
+        wait(command);
+    }
+
+    void RunVisitor::visit(Pipeline &pipeline) {
         FileDescriptor previousOutput;
         for (std::size_t i = pipeline.commands().size() - 1; i > 0; --i) {
             int fds[2];
@@ -167,21 +239,15 @@ namespace bashpp {
             wrappers::fcntlSetFD(input.fd(), wrappers::fcntlGetFD(fds[0]) | FD_CLOEXEC);
             wrappers::fcntlSetFD(output.fd(), wrappers::fcntlGetFD(fds[1]) | FD_CLOEXEC);
 
-            // Set input to current command
-            // Start current command
-            // Set output to next command
-
-            auto& previous = pipeline.commands()[i - 1];
-            auto& current = pipeline.commands()[i];
-
-            previous.redirections().emplace(previous.redirections().begin(), out, FDRedirection{output.fd()});
-            current.redirections().emplace(current.redirections().begin(), in, FDRedirection{input.fd()});
-
-            visit(pipeline.commands()[i]);
+            start(pipeline.commands()[i], input.fd(), previousOutput.fd());
 
             // Keep output fd open until previous has run
             previousOutput = std::move(output);
         }
-        visit(pipeline.commands()[0]);
+        start(pipeline.commands()[0], -1, previousOutput.fd());
+        previousOutput.close();
+        for (size_t i = pipeline.commands().size(); i > 0; --i) {
+            wait(pipeline.commands()[i - 1]);
+        }
     }
 }// namespace bashpp

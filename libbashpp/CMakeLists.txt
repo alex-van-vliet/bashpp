@@ -6,9 +6,8 @@ add_library(libbashpp
     bashpp/node.hpp src/node.cpp
     bashpp/pipeline.hpp src/pipeline.cpp
     bashpp/process.hpp src/process.cpp
-    bashpp/start_visitor.hpp src/start_visitor.cpp
+    bashpp/run_visitor.hpp src/run_visitor.cpp
     bashpp/visitor.hpp src/visitor.cpp
-    bashpp/wait_visitor.hpp src/wait_visitor.cpp
     bashpp/wrappers.hpp src/wrappers.cpp
 )
 target_compile_options(libbashpp PRIVATE -Wall -Wextra -pedantic $<$<CONFIG:Debug>:-Werror -fsanitize=address> $<$<CONFIG:Release>:-O3>)
@@ -23,9 +22,8 @@ add_executable(libbashpp_tests
     tests/file_descriptor.cpp
     tests/pipeline.cpp
     tests/process.cpp
-    tests/start_visitor.cpp
+    tests/run_visitor.cpp
     tests/visitor.cpp
-    tests/wait_visitor.cpp
     tests/wrappers.cpp
 )
 target_compile_options(libbashpp_tests PRIVATE -Wall -Wextra -pedantic $<$<CONFIG:Debug>:-Werror -fsanitize=address> $<$<CONFIG:Release>:-O3>)

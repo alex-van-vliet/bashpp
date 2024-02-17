@@ -1,12 +1,12 @@
 #include <bashpp/command.hpp>
-#include <bashpp/env.hpp>
-#include <bashpp/start_visitor.hpp>
 #include <bashpp/context.hpp>
+#include <bashpp/env.hpp>
+#include <bashpp/run_visitor.hpp>
 #include <gtest/gtest.h>
 
 TEST(LibbashppStartVisitor, TheArgumentsAreConstructedProperly) {
     bashpp::Command command{"echo", {"hello", "world"}};
-    auto arguments = bashpp::StartVisitor::constructArguments(command);
+    auto arguments = bashpp::RunVisitor::constructArguments(command);
     ASSERT_EQ(arguments.size(), 4);
     EXPECT_STREQ(arguments[0], "echo");
     EXPECT_STREQ(arguments[1], "hello");
@@ -18,7 +18,7 @@ TEST(LibbashppStartVisitor, TheEnvironmentIsConstructedProperly) {
     bashpp::Env env;
     env.clear();
     env.set("HELLO", "WORLD");
-    auto environment = bashpp::StartVisitor::constructEnvironment(env);
+    auto environment = bashpp::RunVisitor::constructEnvironment(env);
     ASSERT_EQ(environment.size(), 2);
     EXPECT_STREQ(environment[0], "HELLO=WORLD");
     EXPECT_EQ(environment[1], nullptr);
@@ -26,7 +26,7 @@ TEST(LibbashppStartVisitor, TheEnvironmentIsConstructedProperly) {
 
 TEST(LibbashppWaitVisitor, ACommandCannotBeStartedTwice) {
     bashpp::Context context;
-    bashpp::StartVisitor visitor{context};
+    bashpp::RunVisitor visitor{context};
     bashpp::Command command{"echo", {"hello", "world"}};
 
     command.setupProcess();
