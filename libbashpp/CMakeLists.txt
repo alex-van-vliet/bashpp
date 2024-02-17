@@ -3,6 +3,7 @@ add_library(libbashpp
     bashpp/context.hpp src/context.cpp
     bashpp/env.hpp src/env.cpp
     bashpp/file_descriptor.hpp src/file_descriptor.cpp
+    bashpp/helpers.hpp
     bashpp/node.hpp src/node.cpp
     bashpp/pipeline.hpp src/pipeline.cpp
     bashpp/process.hpp src/process.cpp
